@@ -1,6 +1,7 @@
 package christmas
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"gorm.io/datatypes"
@@ -31,7 +32,7 @@ func LoadRevealingChristmas(db gorm.DB, userID uint) (*ChristmasCore, error) {
 		return &core, nil
 	}
 	if err != gorm.ErrRecordNotFound {
-		return nil, err
+		return nil, fmt.Errorf("failed to query christmas core for user %d: %w", userID, err)
 	}
 
 	visuals := VisualReference{
@@ -41,14 +42,17 @@ func LoadRevealingChristmas(db gorm.DB, userID uint) (*ChristmasCore, error) {
 		HairStyle:   "Long black hair with red and green highlights",
 		OutfitNotes: "Red bomber jacket open, black crop top, black lace thong, Santa hat, blue high tops, no pants,",
 	}
-	data, _ := json.Marshal(visuals)
+	data, err := json.Marshal(visuals)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal visual reference: %w", err)
+	}
 	core = ChristmasCore{
 		UserID:     userID,
 		OutfitName: "Christmas Mika - Revealing",
 		MainOutfit: data,
 	}
 	if err := db.Create(&core).Error; err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create christmas core record: %w", err)
 	}
 	return &core, nil
 }
