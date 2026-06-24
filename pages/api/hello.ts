@@ -5,9 +5,25 @@ type Data = {
   name: string
 }
 
+type ErrorResponse = {
+  error: string
+}
+
 export default function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>
+  res: NextApiResponse<Data | ErrorResponse>
 ) {
-  res.status(200).json({ name: 'John Doe' })
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET'])
+    res.status(405).json({ error: `Method ${req.method} not allowed` })
+    return
+  }
+
+  try {
+    res.status(200).json({ name: 'John Doe' })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal server error'
+    console.error('API /api/hello error:', err)
+    res.status(500).json({ error: message })
+  }
 }
